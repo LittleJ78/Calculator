@@ -8,8 +8,9 @@ public class Validator {
 	private boolean validForOperation;
 	private TypeNum typeFirstNum;
 	private TypeNum typeSecondNum;
-	
-	
+
+
+	public Validator () {}
 	public Validator(String expr) {
 		if(expr.split(" ").length == 3) {
 			String firstNum = expr.split(" ")[0];
@@ -31,7 +32,12 @@ public class Validator {
 		return valid ? romanNum.equals(NumConverter.arabicToRoman(NumConverter.romanToArabic(romanNum))) : false;
 	}
 	boolean validateOperation(String operation) {
-		return operation.chars().mapToObj(x -> String.valueOf((char) x)).allMatch(x -> x.matches("[+-/^*]"));
+		for (Operators operator : Operators.values()) {
+			if (operation.equals(operator.getOperator())) {
+				return true;
+			}
+		}
+		return false; //operation.chars().mapToObj(x -> String.valueOf((char) x)).allMatch(x -> x.matches("[+-/^*]"));
 	}
 
 	public boolean isValidForString() {

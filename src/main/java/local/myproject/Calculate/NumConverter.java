@@ -29,7 +29,7 @@ public class NumConverter {
 	public static String arabicToRoman (double num) {
 		String romanNum = "";
 		
-    	List<String> romans = Arrays.asList(Roman.values()).stream().map(Roman::toString).toList();
+    	List<String> romans = Arrays.stream(Roman.values()).map(Roman::toString).toList();
     	List<Integer> arabics = romans.stream().map(x -> Roman.valueOf(x).toInt()).toList();
     	
     	while (num > 0 ) {

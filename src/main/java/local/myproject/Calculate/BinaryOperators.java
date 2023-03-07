@@ -2,7 +2,7 @@ package local.myproject.Calculate;
 
 import java.util.function.BiFunction;
 
-public enum BinaryOperands {
+public enum BinaryOperators {
 	Addition ((x, y) -> x + y), 
 	Subtraction ((x, y) -> x - y),
 	Division ((x, y) -> x / y),
@@ -11,7 +11,7 @@ public enum BinaryOperands {
 
 	private BiFunction<Double, Double,Double> function;
 	
-	BinaryOperands(BiFunction<Double, Double,Double> function) {
+	BinaryOperators(BiFunction<Double, Double,Double> function) {
 		this.function = function;
 	}
 	
