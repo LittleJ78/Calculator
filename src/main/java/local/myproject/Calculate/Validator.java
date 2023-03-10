@@ -1,13 +1,23 @@
 package local.myproject.Calculate;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Objects;
 
+/**
+ * клас определяющий методы для валидации разных значений в текущем виде практически непригоден будет переписан
+ * @author Evgenii Mironov
+ * version 1.0
+ */
 public class Validator {
-	
+
+	private static final Logger logger = LoggerFactory.getLogger(Validator.class.getName());
+
 	private boolean validForString;
 	private boolean validForOperation;
-	private TypeNum typeFirstNum;
-	private TypeNum typeSecondNum;
+	private Operands typeFirstNum;
+	private Operands typeSecondNum;
 
 
 	public Validator () {}
@@ -16,8 +26,8 @@ public class Validator {
 			String firstNum = expr.split(" ")[0];
 			String secondNum = expr.split(" ")[2];
 			String operation =  expr.split(" ")[1];
-			this.typeFirstNum = validateRoman(firstNum) ? TypeNum.Roman : validateArabic(firstNum) ? TypeNum.Arabic : null;
-			this.typeSecondNum = validateRoman(secondNum) ? TypeNum.Roman : validateArabic(secondNum) ? TypeNum.Arabic : null;
+			this.typeFirstNum = validateRoman(firstNum) ? Operands.Roman : validateArabic(firstNum) ? Operands.Arabic : null;
+			this.typeSecondNum = validateRoman(secondNum) ? Operands.Roman : validateArabic(secondNum) ? Operands.Arabic : null;
 			this.validForOperation = validateOperation(operation);
 			this.validForString = Objects.isNull(this.typeFirstNum) || Objects.isNull(this.typeSecondNum) ?
 								  false : this.typeFirstNum.equals(this.typeSecondNum) && this.validForOperation;
@@ -25,7 +35,7 @@ public class Validator {
 	}
 	
 	boolean validateArabic(String arabicNum) {
-		return arabicNum.chars().mapToObj(x -> String.valueOf((char) x)).allMatch(x -> x.matches("[0-9]"));
+		return arabicNum.chars().mapToObj(x -> String.valueOf((char) x)).allMatch(x -> x.matches("[0-9.]"));
 	}
 	boolean validateRoman(String romanNum) {
 		boolean valid = romanNum.chars().mapToObj(x -> String.valueOf((char) x)).allMatch(x -> x.matches("[IVXLCD]"));
@@ -48,11 +58,11 @@ public class Validator {
 		return validForOperation;
 	}
 
-	public TypeNum getTypeFirstNum() {
+	public Operands getTypeFirstNum() {
 		return typeFirstNum;
 	}
 
-	public TypeNum getTypeSecondNum() {
+	public Operands getTypeSecondNum() {
 		return typeSecondNum;
 	}
 }

@@ -20,7 +20,7 @@ public class AppTest
 
     @BeforeEach
     void setupThis(){
-        num = new Operand(TypeNum.Arabic,5);
+        num = new Operand(Operands.Arabic,5);
         System.out.println("@BeforeEach executed");
     }
 
@@ -28,14 +28,14 @@ public class AppTest
     void testCalcOne()
     {
         System.out.println("======TEST ONE EXECUTED=======");
-        Assertions.assertEquals(  7 , num.apply("+", new Operand(TypeNum.Arabic, 2)).get());
+        Assertions.assertEquals(  7 , num.apply("+", new Operand(Operands.Arabic, 2)).get());
     }
 
     @Test
     void testCalcTwo()
     {
         System.out.println("======TEST TWO EXECUTED=======");
-        Assertions.assertEquals(  3 , num.apply("-", new Operand(TypeNum.Arabic, 2)).get());
+        Assertions.assertEquals(  3 , num.apply("-", new Operand(Operands.Arabic, 2)).get());
     }
 
     @AfterEach

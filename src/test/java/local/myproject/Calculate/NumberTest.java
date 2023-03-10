@@ -5,12 +5,12 @@ import org.junit.jupiter.api.*;
 
 public class NumberTest {
 
-    Operand num1 = new Operand(TypeNum.Arabic,20);
-    Operand num2 = new Operand(TypeNum.Arabic,40);
-    Operand nullArabic = new Operand(TypeNum.Arabic,0);
-    Operand num3 = new Operand(TypeNum.Roman,20);
-    Operand num4 = new Operand(TypeNum.Roman,40);
-    Operand nullRoman = new Operand(TypeNum.Roman,0);
+    Operand num1 = new Operand(Operands.Arabic,20);
+    Operand num2 = new Operand(Operands.Arabic,40);
+    Operand nullArabic = new Operand(Operands.Arabic,0);
+    Operand num3 = new Operand(Operands.Roman,20);
+    Operand num4 = new Operand(Operands.Roman,40);
+    Operand nullRoman = new Operand(Operands.Roman,0);
 
     @Test
     void testCalcArabic()

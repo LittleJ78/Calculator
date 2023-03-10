@@ -1,166 +1,206 @@
 package local.myproject.Calculate;
 
-import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * Класс для хранения алгебраического выражения в разных видах
+ * @author Evgenii Mironov
+ * version 1.0
+ */
 public class Expression {
-	//refactor
-	private Deque <Unit> polishRecord = new LinkedList<>();
-	private List<String> expression = new ArrayList<>();
-	private Deque <Unit> stec = new LinkedList<>();
+	private static final Logger logger = LoggerFactory.getLogger(Expression.class.getName());
+	/**контейнер для хранения алгебраического выражения в виде польской записи*/
+	private Deque<Unit> polishRecord;
+	/**контейнер для хранения алгебраического выражения в виде простой записи*/
+	private List<Unit> unitExpression;
 	Validator validator = new Validator();
 
 
-
-	//old
-	private int firstNum;
-	private int secondNum;
-	private String operation;
-	private Validator validation;
-	private double result;
-
-	String exp;
-
-
-	
-
-
-	public Expression(String expr) {
-		//refactor
-
-		System.out.println(expr);
-
-		this. expression = Arrays.stream(normaliseExpr(expr).split(" ")).toList();
-
-		toPolishRecord();
-
-//3 4 2 * 1 5 − 2 ^ / +
-
-
-
-    	//old
-		expr = normaliseExpr(expr);
-		this.exp = expr;
-
-		this.validation = new Validator(expr);
-		if (validation.isValidForString()) {
-			String firstNum = expr.split(" ")[0];
-			String operation = expr.split(" ")[1];
-			String secondNum = expr.split(" ")[2];
-			this.operation = operation;
-	    	this.firstNum = this.validation.getTypeFirstNum() == TypeNum.Roman ? (int) NumConverter.romanToArabic(firstNum) : 
-	    												         Integer.parseInt(firstNum);
-	    	this.secondNum = this.validation.getTypeSecondNum() == TypeNum.Roman ? (int) NumConverter.romanToArabic(secondNum) : 
-	    												           Integer.parseInt(secondNum);
-	    	
-
-	    	this.result = new Operand(validation.getTypeFirstNum(), this.firstNum)
-	    			.apply(this.operation, new Operand(validation.getTypeSecondNum(), this.secondNum)).get();
-		}
-		else {
-			System.out.println("Expression is not correct");
-		}
-	}
-	
-	private String normaliseExpr(String expr) {
-		//refactor
-    	expr = expr.replaceAll(" ", "");
-    	for (Operators operator : Operators.values()) {
-    		expr = expr.replace(operator.getOperator(), " " + operator.getOperator() + " ");
-    	}
-		expr = expr.replaceAll("  ", " ");
-    	return expr;
+	/**
+	 * конструктор
+	 * @param expression - Алгебраическое выражение вида "1 + 2 - (3 - 1)"
+	 * @see Operators - перечисление поддерживаемых операторов
+	 * @see Operands - перечисление поддерживаемых форматов чисел
+	 */
+	public Expression(String expression) {
+	//	this.unitExpression = toUnitExpression(expression);
+		this.polishRecord = toPolishRecord(expression);
+		logger.info("Записали польскую запись " + getPolishRecord());
 	}
 
-	private  void toPolishRecord() {
+	/**
+	 * преобразование сроки в контейнер - простая запись
+	 * @param expression - Алгебраическое выражение вида "1 + 2 - (3 - 1)"
+	 * @return - алгебраическое выражение в виде списка из отдельных операторов и операнд
+	 * @see Unit - абстрактный класс для операторов и операнд
+	 */ //cos(90)-1/2*sin(5^2+65)
+	private List<Unit> toUnitExpression(String expression) {
+		String str = normaliseExpr(expression);
+		logger.debug("нормализовали запись {}", str);
+		List<String> stringExpression = Arrays.stream(str.split(" ")).toList();
 
-		for(int i = 0; i < expression.size(); i++) {
-			if(validator.validateArabic(expression.get(i))) {
-				polishRecord.add(new Operand(TypeNum.Arabic, Double.parseDouble(expression.get(i))));
-	//			System.out.println("добавляем в запись " + polishRecord.peekLast().get());
+		Deque<Unit> buffer = new LinkedList<>();
+		logger.trace("ОБРАБОТКА НОРМАЛИЗОВАНОЙ ЗАПИСИ, [{}] элемента - {}",stringExpression.size(),stringExpression.toString());
+		for(int i = 0; i < stringExpression.size(); i++) {
+			logger.trace("обрабатывается элемент {}",stringExpression.get(i));
+			if (validator.validateArabic(stringExpression.get(i))) {
+				buffer.add(new Operand(Operands.Arabic, Double.parseDouble(stringExpression.get(i))));
+				logger.trace("добавили {} в контейнер", stringExpression.get(i));
 			}
-			if(validator.validateOperation(expression.get(i))) {
+			if(validator.validateOperation(stringExpression.get(i))) {
 				for (Operators operator : Operators.values()) {
-					if(operator.getOperator().equals(expression.get(i))){
-						Operator buf = new Operator(operator);
-						if(!stec.isEmpty()) {
-							if(((Operators) stec.peekLast().get()).getPriority() >= buf.get().getPriority() &&
-									stec.peekLast().getType() != TypeOfOperators.Brackets) {
-	//							System.out.println("убираем из стека " + ((Operators)stec.peekLast().get()).getOperator());
-								polishRecord.add(stec.pollLast());
-	//							System.out.println("добавляем в запись " + polishRecord.peekLast().get());
+					if (operator.getOperator().equals(stringExpression.get(i))) {
+						buffer.add(new Operator(operator));
+						logger.trace("добавили {} в контейнер", stringExpression.get(i));
+					}
+				}
+			}
+		}
+
+		Deque <Unit> result = new LinkedList<>();
+		while(!buffer.isEmpty()){  //преобразование "1(2-1)1" в "1 * (2 - 1) * 1"
+			if(buffer.peekLast().getUnitType().equals(Unit.UnitType.OPERATOR) && !result.isEmpty())
+				if (((Operator) buffer.peekLast()).get().equals(Operators.RightRoundBracket)
+						&& result.peekFirst().getUnitType().equals(Unit.UnitType.OPERAND)){
+					result.addFirst(new Operator(Operators.Multiplication));
+				}
+			if(!result.isEmpty() && result.peekFirst().getUnitType().equals(Unit.UnitType.OPERATOR))
+				if(((Operator) result.peekFirst()).get().equals(Operators.LeftRoundBracket)
+						&& buffer.peekLast().getUnitType().equals(Unit.UnitType.OPERAND)) {
+					result.addFirst(new Operator(Operators.Multiplication));
+				}
+			result.addFirst(buffer.pollLast());
+		}
+		return (List<Unit>) result;
+	}
+
+	/**
+	 * метод убирает лишние пробелы и добавляет нужные
+	 * "1-2 +(3  *4)" -> "1 - 2 + ( 3 * 4 )"
+	 * @param expression - алгебраическое выражение
+	 * @return - нормализованое алгебраическое выражение
+	 */
+	private String normaliseExpr(String expression) {
+    	expression = expression.replaceAll(" ", "");
+    	for (Operators operator : Operators.values()) {
+    		expression = expression.replace(operator.getOperator(), " " + operator.getOperator() + " ");
+    	}
+		expression = expression.replaceAll("  ", " ").trim();
+    	return expression;
+	}
+
+	/**
+	 * преобразование алгебраического выражения в польскую запись
+	 * @param expression - алгебраическое выражение
+	 * @return - польская запись
+	 */
+	private Deque<Unit> toPolishRecord(String expression) {
+
+		Deque <Unit> stack = new LinkedList<>();
+		Deque<Unit> result = new LinkedList<>();
+		this.unitExpression = toUnitExpression(expression);
+		logger.info("записали нормализованую запись {} ",this.getUnitExpression());
+
+		for(int i = 0; i < unitExpression.size(); i++) {
+
+			if(unitExpression.get(i).getUnitType().equals(Unit.UnitType.OPERAND)) {
+				result.add(unitExpression.get(i));
+				logger.trace("добавили в запись " + result.peekLast().get());
+			}
+			if(unitExpression.get(i).getUnitType().equals(Unit.UnitType.OPERATOR)) {
+				Operator curentOperator = (Operator) unitExpression.get(i);
+				for (Operators operator : Operators.values()) {
+					if(operator.getOperator().equals( curentOperator.get().getOperator()) ) {
+						if(!stack.isEmpty()) {
+							if(((Operators) stack.peekLast().get()).getPriority() >= curentOperator.get().getPriority() &&
+									stack.peekLast().getType() != TypeOfOperators.Brackets) {
+								result.add(stack.pollLast());
+								logger.trace("добавили из стека в запись " + ((Operators)result.peekLast().get()).getOperator());
 							}
 						}
-						if(buf.get() == Operators.RightRoundBracket) {
-							while (((Operators) stec.peekLast().get()) != Operators.LeftRoundBracket) {
-	//							System.out.println("убираем из стека между скобками " + ((Operators)stec.peekLast().get()).getOperator());
-	//							System.out.println("добавляем в запись между скобками " + polishRecord.peekLast().get());
-								polishRecord.add(stec.pollLast());
+						if(curentOperator.get() == Operators.RightRoundBracket) {
+							while (stack.peekLast().get() != Operators.LeftRoundBracket) {
+								result.add(stack.pollLast());
+								logger.trace("добавили из стека в запись между скобками " + ((Operators)result.peekLast().get()).getOperator());
 							}
-							stec.pollLast();
+							logger.trace("убрали из стека " + ((Operators)stack.peekLast().get()).getOperator());
+							stack.pollLast();
 						}
 						else {
-							stec.addLast(buf);
-	//						System.out.println("добавляем в стек " + ((Operators)stec.peekLast().get()).getOperator());
+							stack.addLast(curentOperator);
+							logger.trace("добавили в стек " + ((Operators)stack.peekLast().get()).getOperator());
 						}
 					}
 				}
 			}
 		}
-		while(stec.size() > 0) {
-			polishRecord.add(stec.pollLast());
-	//		System.out.println("добавляем в запись " + polishRecord.peekLast().get());
+		while(stack.size() > 0) {
+			result.add(stack.pollLast());
+			logger.trace("добавили из стека в запись " + ((Operators)result.peekLast().get()).getOperator());
 		}
+		return result;
 	}
 
-	
+	/**
+	 * вычислеие результата польской записи
+ 	 * @return - результат в виде операнда
+	 * @see Operand
+	 */
 	public Operand calculate() {
-		stec = new LinkedList<>();
+		Deque <Unit> stack = new LinkedList<>();
 		while (!polishRecord.isEmpty()) {
 			if (polishRecord.peekFirst().getUnitType() == Unit.UnitType.OPERAND) {
-				stec.addLast(polishRecord.pollFirst());
-
+				stack.addLast(polishRecord.pollFirst());
 			}
 			if (polishRecord.peekFirst().getUnitType() == Unit.UnitType.OPERATOR) {
-				Operand secondOperand = (Operand) stec.pollLast();
-				Operand firstOperand = (Operand) stec.pollLast();
-				String operator = ((Operator) polishRecord.pollFirst()).get().getOperator();
-				stec.addLast(firstOperand.apply(operator, secondOperand));
-	//			System.out.println(firstOperand.get() + " " + operator + " " + secondOperand.get() + " = " + ((Operand) stec.peekLast()).get());
+				Operand secondOperand = (Operand) stack.pollLast();
+				Operator operator = ((Operator) polishRecord.pollFirst());
+				logger.trace("выполняется операция \" {} \" ",operator.get().getOperator());
+				if (operator.getType().equals(TypeOfOperators.BinaryOperators)) {
+					logger.trace("выполняется бинарная операция");
+					Operand firstOperand = (Operand) stack.pollLast();
+					stack.addLast(firstOperand.apply(operator, secondOperand));
+					logger.debug("{} {} {} = {} ",firstOperand.get(),operator.get().getOperator(), secondOperand.get(), ((Operand) stack.peekLast()).get());
+				}
+				else {
+					logger.trace("выполняется унарная операция");
+					stack.addLast(secondOperand.apply(operator));
+					logger.debug("{} {} = {} ",operator.get().getOperator(), secondOperand.get(), ((Operand) stack.peekLast()).get());
+				}
 			}
 		}
-		return (Operand) stec.pollFirst(); //3 + 4 * 2 / (1 - 5)^2
+		return (Operand) stack.pollFirst();
 	}
 
-	public String getResult() {
-		return this.validation.getTypeFirstNum() == TypeNum.Roman ? NumConverter.arabicToRoman((int) this.result) : String.valueOf(result);
+	/**
+	 * возвращает алгебраическое выражение в виде строки
+	 * @return - алгебраическое выражение
+	 */
+	public String getUnitExpression() {
+		String result = unitExpression.stream()
+				.map(x -> x.getUnitType() == Unit.UnitType.OPERATOR ?
+						((Operator) x).get().getOperator() : NumConverter.convertDoubleToString(((Operand) x).get()))
+				.collect(Collectors.joining(" "));
+
+		return result;
 	}
-	
-	public String getFirstNum() {
-		return this.validation.getTypeFirstNum() == TypeNum.Roman ? NumConverter.arabicToRoman((int) this.firstNum) : String.valueOf(firstNum);
+	/**
+	 * возвращает польскую запись в виде строки
+	 * @return - польская запись
+	 */
+	public String getPolishRecord() {
+		String result = polishRecord.stream()
+				.map(x -> x.getUnitType() == Unit.UnitType.OPERATOR ?
+						((Operator) x).get().getOperator() : NumConverter.convertDoubleToString(((Operand) x).get()))
+				.collect(Collectors.joining(" "));
+
+		return result;
 	}
 
-	public String getSecondNum() {
-		return this.validation.getTypeSecondNum() == TypeNum.Roman ? NumConverter.arabicToRoman((int) this.secondNum) : String.valueOf(secondNum);
-	}
-
-	public String getOperation() {
-		return operation;
-	}
-	
-	public boolean isValid() {
-		return validation.isValidForString();
-		
-	}
-
-	public static void main(String...args) {
-		Expression exp = new Expression("3 + 4 * 2 / (1 - 5)^2");
-		System.out.println(exp.expression.toString());
-		exp.polishRecord.forEach(x -> System.out.print( x.getUnitType() ==  Unit.UnitType.OPERAND ? x.get() + " | " : ((Operators) x.get()).getOperator() + " | ") );
-		System.out.println();
-		exp.stec.forEach(x -> {
-				System.out.println(x.getType() + " --- " + ((Operators) x.get()).getOperator() + " " + ((Operators) x.get()).getPriority());
-		});
-
-		System.out.println(exp.calculate().get());
+	public static void main(String[] args) {
 	}
 }
