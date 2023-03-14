@@ -14,6 +14,7 @@ public enum TypeOfOperators {
 
     BinaryOperators,
     PrefixUnaryOperators,
+    PostfixUnaryOperators,
     Brackets;
 
     private static final Logger logger = LoggerFactory.getLogger(TypeOfOperators.class.getName());

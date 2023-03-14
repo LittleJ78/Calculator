@@ -26,10 +26,37 @@ public class Expression {
 	 * @see Operators - перечисление поддерживаемых операторов
 	 * @see Operands - перечисление поддерживаемых форматов чисел
 	 */
-	public Expression(String expression) {
-	//	this.unitExpression = toUnitExpression(expression);
+	public Expression(String expression) throws Exception {
+		this.unitExpression = toUnitExpression(expression);
+		logger.info("записали нормализованую запись {} ",this.getUnitExpression());
+		this.unitExpression = normaliseOperatorsTypeInUnitExpr(unitExpression);
+		logger.info("переопределили операторы в выражении {} ",this.getUnitExpression());
 		this.polishRecord = toPolishRecord(expression);
 		logger.info("Записали польскую запись " + getPolishRecord());
+	}
+
+	/**
+	 * переопределение операторов с изменяемым типом - минус может быть как бинарным так и префиксным унарным -
+	 * в зависимости от места где  оператор находиться в алгебраическом выражении
+	 * @param expression - алгебраическое выражение в виде списка из отдельных операторов и операнд
+	 * @return - алгебраическое выражение в виде списка из отдельных переопределенных операторов и операнд
+	 */
+	private List<Unit> normaliseOperatorsTypeInUnitExpr (List<Unit> expression) throws Exception {
+		if (expression.get(0).getUnitType().equals(Unit.UnitType.OPERATOR) && ((Operator) expression.get(0)).get().equals(Operators.Subtraction)) {
+			logger.trace("обрабатываем {}",expression.get(0).get());
+			((Operator) expression.get(0)).setTypeOfOperator(TypeOfOperators.PrefixUnaryOperators);
+			logger.trace("изменили тип оператора с индексом 0 на {} ", TypeOfOperators.PrefixUnaryOperators);
+		}
+		for (int i = 1; i < expression.size(); i++) {
+			logger.trace("обрабатываем {}",expression.get(i).get());
+			if(expression.get(i).getUnitType().equals(Unit.UnitType.OPERATOR) && ((Operator) expression.get(i)).get().equals(Operators.Subtraction)) {
+				if(expression.get(i - 1).getUnitType().equals(Unit.UnitType.OPERATOR) && !((Operator) expression.get(i-1)).get().equals(Operators.RightRoundBracket)) {
+					((Operator) expression.get(i)).setTypeOfOperator(TypeOfOperators.PrefixUnaryOperators);
+					logger.trace("изменили тип оператора с индексом {} на {} ",i , TypeOfOperators.PrefixUnaryOperators);
+				}
+			}
+		}
+		return expression;
 	}
 
 	/**
@@ -37,7 +64,7 @@ public class Expression {
 	 * @param expression - Алгебраическое выражение вида "1 + 2 - (3 - 1)"
 	 * @return - алгебраическое выражение в виде списка из отдельных операторов и операнд
 	 * @see Unit - абстрактный класс для операторов и операнд
-	 */ //cos(90)-1/2*sin(5^2+65)
+	 */
 	private List<Unit> toUnitExpression(String expression) {
 		String str = normaliseExpr(expression);
 		logger.debug("нормализовали запись {}", str);
@@ -65,7 +92,8 @@ public class Expression {
 		while(!buffer.isEmpty()){  //преобразование "1(2-1)1" в "1 * (2 - 1) * 1"
 			if(buffer.peekLast().getUnitType().equals(Unit.UnitType.OPERATOR) && !result.isEmpty())
 				if (((Operator) buffer.peekLast()).get().equals(Operators.RightRoundBracket)
-						&& result.peekFirst().getUnitType().equals(Unit.UnitType.OPERAND)){
+						&& (result.peekFirst().getUnitType().equals(Unit.UnitType.OPERAND)
+						|| ((Operator) result.peekFirst()).get().equals(Operators.LeftRoundBracket))){
 					result.addFirst(new Operator(Operators.Multiplication));
 				}
 			if(!result.isEmpty() && result.peekFirst().getUnitType().equals(Unit.UnitType.OPERATOR))
@@ -79,7 +107,8 @@ public class Expression {
 	}
 
 	/**
-	 * метод убирает лишние пробелы и добавляет нужные
+	 * метод нормализует запись -
+	 * убирает лишние пробелы и добавляет нужные -
 	 * "1-2 +(3  *4)" -> "1 - 2 + ( 3 * 4 )"
 	 * @param expression - алгебраическое выражение
 	 * @return - нормализованое алгебраическое выражение
@@ -102,8 +131,7 @@ public class Expression {
 
 		Deque <Unit> stack = new LinkedList<>();
 		Deque<Unit> result = new LinkedList<>();
-		this.unitExpression = toUnitExpression(expression);
-		logger.info("записали нормализованую запись {} ",this.getUnitExpression());
+
 
 		for(int i = 0; i < unitExpression.size(); i++) {
 
@@ -115,9 +143,10 @@ public class Expression {
 				Operator curentOperator = (Operator) unitExpression.get(i);
 				for (Operators operator : Operators.values()) {
 					if(operator.getOperator().equals( curentOperator.get().getOperator()) ) {
-						if(!stack.isEmpty()) {
-							if(((Operators) stack.peekLast().get()).getPriority() >= curentOperator.get().getPriority() &&
-									stack.peekLast().getType() != TypeOfOperators.Brackets) {
+						if(curentOperator.getType().equals(TypeOfOperators.BinaryOperators)) {
+							while(!stack.isEmpty() && ( (((Operator) stack.peekLast()).getType().equals(TypeOfOperators.PrefixUnaryOperators)
+									|| ((Operators) stack.peekLast().get()).getPriority() >= curentOperator.get().getPriority())
+									&& stack.peekLast().getType() != TypeOfOperators.Brackets) ) {
 								result.add(stack.pollLast());
 								logger.trace("добавили из стека в запись " + ((Operators)result.peekLast().get()).getOperator());
 							}
@@ -150,7 +179,7 @@ public class Expression {
  	 * @return - результат в виде операнда
 	 * @see Operand
 	 */
-	public Operand calculate() {
+	public Operand calculate() throws ArithmeticException {
 		Deque <Unit> stack = new LinkedList<>();
 		while (!polishRecord.isEmpty()) {
 			if (polishRecord.peekFirst().getUnitType() == Unit.UnitType.OPERAND) {
@@ -164,11 +193,27 @@ public class Expression {
 					logger.trace("выполняется бинарная операция");
 					Operand firstOperand = (Operand) stack.pollLast();
 					stack.addLast(firstOperand.apply(operator, secondOperand));
+					switch (((Operand) stack.peekLast()).get().toString()) {
+						case "Infinity":
+							logger.warn("{} {} {} = {} ",firstOperand.get(),operator.get().getOperator(), secondOperand.get(), ((Operand) stack.peekLast()).get());
+							throw new ArithmeticException("Infinity");
+						case "NaN":
+							logger.warn("{} {} {} = {} ",firstOperand.get(),operator.get().getOperator(), secondOperand.get(), ((Operand) stack.peekLast()).get());
+							throw new ArithmeticException("Not-a-Number");
+					}
 					logger.debug("{} {} {} = {} ",firstOperand.get(),operator.get().getOperator(), secondOperand.get(), ((Operand) stack.peekLast()).get());
 				}
 				else {
 					logger.trace("выполняется унарная операция");
 					stack.addLast(secondOperand.apply(operator));
+					switch (((Operand) stack.peekLast()).get().toString()) {
+						case "Infinity":
+							logger.error("{} {} = {} ",operator.get().getOperator(), secondOperand.get(), ((Operand) stack.peekLast()).get());
+							throw new ArithmeticException("Infinity");
+						case "NaN":
+							logger.error("{} {} = {} ",operator.get().getOperator(), secondOperand.get(), ((Operand) stack.peekLast()).get());
+							throw new ArithmeticException("Not-a-Number");
+					}
 					logger.debug("{} {} = {} ",operator.get().getOperator(), secondOperand.get(), ((Operand) stack.peekLast()).get());
 				}
 			}
@@ -197,10 +242,10 @@ public class Expression {
 				.map(x -> x.getUnitType() == Unit.UnitType.OPERATOR ?
 						((Operator) x).get().getOperator() : NumConverter.convertDoubleToString(((Operand) x).get()))
 				.collect(Collectors.joining(" "));
-
 		return result;
 	}
 
 	public static void main(String[] args) {
+
 	}
 }

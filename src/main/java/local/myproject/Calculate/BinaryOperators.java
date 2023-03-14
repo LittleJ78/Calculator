@@ -2,7 +2,6 @@ package local.myproject.Calculate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.function.BiFunction;
 
 /**
@@ -16,7 +15,7 @@ public enum BinaryOperators {
 
 	Addition ((x, y) -> x + y), 
 	Subtraction ((x, y) -> x - y),
-	Division ((x, y) -> x / y),
+	Division ((x, y) -> x / y ),
 	Multiplication ((x, y) -> x * y),
 	Exponentiation ((x, y) -> Math.pow(x, y));
 

@@ -37,12 +37,29 @@ public class Operand extends Unit{
 	 * @return итоговый результат операции в виде нового операнда
 	 */
 	public Operand apply(Operator operation) {
+		String strClass = this.getClass().getName().replaceAll("[a-zA-Z]*$","");
 		String name = Arrays.stream(Operators.values())
 				.filter(o -> operation.get().getOperator().equals(o.getOperator()))
 				.map(o -> o.name()).collect(Collectors.joining());
 
 		logger.trace("обработка унарного оператора {}", name);
-		double		result = PrefixUnaryOperators.valueOf(name).get().apply(this.value);
+		try {
+			Class classForCurrentUnaryOperators = Class.forName(strClass + operation.getType().name());
+			logger.trace("ищем {} в классе {} ", name, classForCurrentUnaryOperators.getName());
+		}
+		catch (ClassNotFoundException ex) {
+			logger.error("Didn't find Class for {}",strClass + operation.getType().name());
+		}
+		double result = 0;
+		switch (operation.getType().name()) {
+			case "PrefixUnaryOperators":
+				result = PrefixUnaryOperators.valueOf(name).get().apply(this.value);
+				break;
+			case "PostfixUnaryOperators":
+				result = PostfixUnaryOperators.valueOf(name).get().apply(this.value);
+				break;
+		}
+
 
 		result = result < 0 && this.type == Operands.Roman ? 0 : result;
 		return new Operand(this.type, result);
@@ -87,9 +104,8 @@ public class Operand extends Unit{
 	public static void main(String[] args) {
 		Operand num2 = new Operand(Operands.Arabic,10);
 		Operand num1 = new Operand(Operands.Arabic,90);
-		Operator operate = new Operator(Operators.Sinus);
+		Operator operate = new Operator(Operators.Subtraction);
 		System.out.println(num1.apply(operate).get());
-		System.out.println(Math.sin(Math.toRadians(90)));
 	}
 }
 

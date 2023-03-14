@@ -10,19 +10,25 @@ import org.slf4j.LoggerFactory;
  * version 1.0
  */
 public enum Operators {
-	//binary operands
+	//Binary Operators
 	Addition (new OperatorVal("+", 0)),
 	Subtraction (new OperatorVal("-", 0)),
 	Division (new OperatorVal("/", 1)),
 	Multiplication (new OperatorVal("*", 1)),
 	Exponentiation (new OperatorVal("^", 2)),
-	//Prefix unary operands
+
+	//Prefix Unary Operators
 	Sinus (new OperatorVal("sin", 2)),
 	Cosine(new OperatorVal("cos", 2)),
 	Tangent (new OperatorVal("tan", 2)),
 	Cotangent (new OperatorVal("ctg", 2)),
+	NaturalLogarithm (new OperatorVal("ln", 2)),
+	DecimalLogarithm (new OperatorVal("lg", 2)),
 
-	// brackets
+	//Postfix Unary Operators
+	Factorial (new OperatorVal("!", 2)),
+
+	// Brackets
 	LeftRoundBracket (new OperatorVal("(", 100)),
 	RightRoundBracket (new OperatorVal(")", 100));
 
@@ -59,6 +65,7 @@ public enum Operators {
 	 * класс хранящий вид и приоритет оператора
 	 */
 	private static class OperatorVal {
+
 		/** строковый вид оператора:  "+",  "-",  "sin" и т.д.*/
 		String operator;
 		/** приоритет выполнения операции - 0 самый низкий, 100 наивысший */

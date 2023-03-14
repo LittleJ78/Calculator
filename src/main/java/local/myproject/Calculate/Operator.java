@@ -14,10 +14,10 @@ import java.util.List;
 public class Operator extends Unit{
     private static final Logger logger = LoggerFactory.getLogger(Operator.class.getName());
 
-    /** тип оператора - унарный / бинарный / скобка и т.д. */
-    private TypeOfOperators type;
     /** значение оператора - плюс / минус / синус и т.д. */
     private Operators value;
+    /**тип оператора - унарный / бинарный / скобка и т.д. */
+    private TypeOfOperators type;
 
     /**
      * конструктор
@@ -49,7 +49,7 @@ public class Operator extends Unit{
                 }
             }
             catch (ClassNotFoundException e) {
-                System.out.println("Didn't define operation for " + this.value);
+                logger.error("Didn't define operation for {}", this.value);
             }
         }
         return null;
@@ -61,7 +61,20 @@ public class Operator extends Unit{
      */
     @Override
     public TypeOfOperators getType() {
-        return type;
+        return this.type;
+    }
+
+    /**
+     * сетер
+     * устанавливает тип оператора - бинарный / префиксныйУнарный и т.д.
+     * нужен для операторов с изменяемым типом - минус может быть как бинарным так и префиксным унарным
+     * для операторов с изменяемым типом задается любой на выбор. Логика переопрелеления типа  задается в
+     * методе normaliseOperatorsTypeInUnitExpr класса Expression, т.к. зависит от места использования
+     * в алгебраическом выражении
+     * @param type
+     */
+    public void setTypeOfOperator(TypeOfOperators type) {
+        this.type = type;
     }
 
     /**
