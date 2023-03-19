@@ -14,7 +14,7 @@ public class Operand extends Unit{
 
 	private static final Logger logger = LoggerFactory.getLogger(Operand.class.getName());
 	/** формат числа соотносящийся к типу системы счисления вкоторой записан операнд - арабское, римское, двоичное и т.д. */
-	private Operands type;
+	private TypeOfOperands type;
 	/** числовое значение операнда */
 	private double value;
 
@@ -25,10 +25,9 @@ public class Operand extends Unit{
 	 *                - арабское, римское, двоичное и т.д.
 	 * @param value - числовое значение операнда
 	 */
-	public Operand(Operands type, double value) {
+	public Operand(TypeOfOperands type, double value) {
 		this.type = type;
 		this.value = value;
-		this.unitType = UnitType.OPERAND;
 	}
 
 	/**
@@ -39,7 +38,7 @@ public class Operand extends Unit{
 	public Operand apply(Operator operation) {
 		String strClass = this.getClass().getName().replaceAll("[a-zA-Z]*$","");
 		String name = Arrays.stream(Operators.values())
-				.filter(o -> operation.get().getOperator().equals(o.getOperator()))
+				.filter(o -> operation.getValue().equals(o.getOperator()))
 				.map(o -> o.name()).collect(Collectors.joining());
 
 		logger.trace("обработка унарного оператора {}", name);
@@ -61,7 +60,7 @@ public class Operand extends Unit{
 		}
 
 
-		result = result < 0 && this.type == Operands.Roman ? 0 : result;
+		result = result < 0 && this.type == TypeOfOperands.Roman ? 0 : result;
 		return new Operand(this.type, result);
 	}
 
@@ -73,12 +72,12 @@ public class Operand extends Unit{
 	 */
 	public Operand apply(Operator operation, Operand nextNumber) {
 		String name = Arrays.stream(Operators.values())
-				.filter(o -> operation.get().getOperator().equals(o.getOperator()))
+				.filter(o -> operation.getValue().equals(o.getOperator()))
 				.map(o -> o.name()).collect(Collectors.joining());
 
 				logger.trace("обработка бинарного оператора {}", name);
 				double result = BinaryOperators.valueOf(name).get().apply(this.value, nextNumber.value);
-		result = result < 0 && this.type == Operands.Roman ? 0 : result;
+		result = result < 0 && this.type == TypeOfOperands.Roman ? 0 : result;
 		return new Operand(this.type, result);
 	}
 
@@ -87,7 +86,7 @@ public class Operand extends Unit{
 	 * @return числовое значение операнда
 	 */
 	@Override
-	public Double get() {
+	public Double getValue() {
 		return this.value;
 	}
 
@@ -97,16 +96,10 @@ public class Operand extends Unit{
 	 *                 - арабское, римское, двоичное и т.д.
 	 */
 	@Override
-	public Operands getType () {
+	public TypeOfOperands getType () {
 		return type;
 	}
 
-	public static void main(String[] args) {
-		Operand num2 = new Operand(Operands.Arabic,10);
-		Operand num1 = new Operand(Operands.Arabic,90);
-		Operator operate = new Operator(Operators.Subtraction);
-		System.out.println(num1.apply(operate).get());
-	}
 }
 
 

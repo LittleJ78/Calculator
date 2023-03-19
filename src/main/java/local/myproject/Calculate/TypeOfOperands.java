@@ -11,9 +11,10 @@ import org.slf4j.LoggerFactory;
  * version 1.0
  */
 
-public enum Operands {
+public enum TypeOfOperands {
 	Roman,
-	Arabic;
+	Arabic,
+	Binary;
 
-	private static final Logger logger = LoggerFactory.getLogger(Operands.class.getName());
+	private static final Logger logger = LoggerFactory.getLogger(TypeOfOperands.class.getName());
 }

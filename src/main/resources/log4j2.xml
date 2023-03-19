@@ -3,7 +3,7 @@
     <appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="[%40.40l]%highlight{[%5p]
-      - %m%n}{FATAL=bright red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue, TRACE=white}"/>
+    :   %m%n}{FATAL=bright red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue, TRACE=white}"/>
         </Console>
 
         <RollingFile name="RollingFile" fileName="logs/log4j2-xml.log" filePattern="logs/log4j2-xml-$${date:yyyy-MM}/log4j2-xml-%d{yyyy-MM-dd}-%i.log.gz">
@@ -12,7 +12,7 @@
         </RollingFile>
     </appenders>
     <loggers>
-        <root level="trace" additivity ="false">
+        <root level="debug" additivity ="false">
             <appender-ref ref="Console"/>
             <appender-ref ref="RollingFile"/>
         </root>

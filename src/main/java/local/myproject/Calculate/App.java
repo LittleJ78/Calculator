@@ -2,9 +2,6 @@ package local.myproject.Calculate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
-import org.slf4j.spi.LoggerFactoryBinder;
 
 import java.util.Scanner;
 
@@ -34,7 +31,7 @@ public class App
 		try{
     	Expression expr = new Expression(input);
     	in.close();
-			logger.info("result of execute expression is {}", NumConverter.convertDoubleToString(expr.calculate().get()));
+			logger.info("result of execute expression is {}", Converter.operandToString(expr.calculate()));
 		}
 		catch (ArithmeticException exc) {
 			logger.warn("ошибочка вышла : {}", exc.getMessage());

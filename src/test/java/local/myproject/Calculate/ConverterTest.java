@@ -12,7 +12,6 @@ public class NumConverterTest {
         Assertions.assertEquals("V", NumConverter.arabicToRoman(5));
         Assertions.assertEquals("X", NumConverter.arabicToRoman(10));
         Assertions.assertEquals("XXI", NumConverter.arabicToRoman(21));
-
     }
     @Test
     public void roman () {
@@ -20,6 +19,5 @@ public class NumConverterTest {
         Assertions.assertEquals(4, NumConverter.romanToArabic("IV"));
         Assertions.assertEquals(7, NumConverter.romanToArabic("VII"));
         Assertions.assertEquals(40, NumConverter.romanToArabic("XL"));
-
     }
 }

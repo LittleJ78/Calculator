@@ -3,36 +3,18 @@ package local.myproject.Calculate;
 /**
  * Абстрактный класс для членов алгебраического выражения
  * @see Operator
- * @see Operands
+ * @see TypeOfOperands
  * @author Evgenii Mironov
  * version 1.0
  */
 
 public abstract class Unit {
-    /**
-     * перечисление задающее тип члена алгебраического выражения
-     */
-    enum UnitType {
-        OPERATOR,
-        OPERAND;
-    }
-
-    /**тип члена алгебраического выражения*/
-    UnitType unitType;
-
-    /**
-     * гетер
-     * @return - тип члена алгебраического выражения - оператор / операнд
-     */
-    public UnitType getUnitType() {
-        return unitType;
-    }
 
     /**
      * гетер
      * @return - возвращает значение оператора или операнда
      */
-    public Object get() {
+    public Object getValue() {
         return null;
     }
 
@@ -40,7 +22,12 @@ public abstract class Unit {
      * гетер
      * @return - возвращает тип оператора или операнда
      */
-    public Object getType(){
+    public Enum getType(){
        return null;
     }
+    /**
+     * гетер
+     * @return - возвращает приотет оператора, для операнда возвращает ноль
+     */
+    public int getPriority() {return 0;}
 }

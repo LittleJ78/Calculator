@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * перечисление используемое для конвертации из римских чисел в арабские и обратно
- * @see NumConverter
+ * @see Converter
  * @author Evgenii Mironov
  * version 1.0
  */

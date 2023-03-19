@@ -18,11 +18,11 @@ public class CustomMath {
     {
        if (numb < 0) {
            throw new ArithmeticException(String.format("Factorial argument must be a positive, but it's %s",
-                   NumConverter.convertDoubleToString(numb)));
+                   Converter.doubleToString(numb)));
        }
-       if(NumConverter.convertDoubleToString(numb).contains(".")) {
+       if(Converter.doubleToString(numb).contains(".")) {
            throw new ArithmeticException(String.format("Factorial argument must be an integer, but it's %s",
-                   NumConverter.convertDoubleToString(numb)));
+                   Converter.doubleToString(numb)));
        }
        double result = 1;
        for (long i = 1; i <= (long) numb; i++) {

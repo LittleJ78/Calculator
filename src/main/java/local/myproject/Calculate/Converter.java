@@ -11,10 +11,10 @@ import java.util.stream.Collectors;
  * @author Evgenii Mironov
  * version 1.0
  */
-public class NumConverter {
+public class Converter {
 
-	private static final Logger logger = LoggerFactory.getLogger(NumConverter.class.getName());
-	private NumConverter() {
+	private static final Logger logger = LoggerFactory.getLogger(Converter.class.getName());
+	private Converter() {
 	}
 
 	/**
@@ -22,7 +22,7 @@ public class NumConverter {
 	 * @param romanNum Римское число в виде строки, валидны I, V, X, L, C, D, M
 	 * @return арабское число в формате double
 	 */
-	public static double romanToArabic (String romanNum) {
+	public static double romanToDouble(String romanNum) {
 		double arabicNum = 0;
 		
     	List<Roman> romanNums = (ArrayList<Roman>) romanNum.chars().mapToObj(x -> Roman.valueOf(String.valueOf((char) x)))
@@ -45,7 +45,7 @@ public class NumConverter {
 	 * @param num - арабское число
 	 * @return - римское число
 	 */
-	public static String arabicToRoman (double num) {
+	public static String doubleToRoman(double num) {
 		String romanNum = "";
 		
     	List<String> romans = Arrays.stream(Roman.values()).map(Roman::toString).toList();
@@ -64,11 +64,60 @@ public class NumConverter {
 	}
 
 	/**
+	 * преобразует число из произвольного типа в double
+	 * @return число в double
+	 */
+	public static double anyTypeNumbToDouble(String numb){
+		if (Validator.validateArabic(numb)) {
+			return Double.valueOf(numb);
+		}
+		if(Validator.validateRoman(numb)) {
+			return Double.valueOf(romanToDouble(numb));
+		}
+		if(Validator.validateBinary(numb)) {
+			return Double.valueOf(byteToDouble(numb));
+		}
+		return Double.NaN;
+	}
+	/**
+	 * конвертация операнда в печатный вид в соответствии с типом операнда
+	 * @param - операнд
+	 * @return - значение ооперанда в виде строки в сответствии с типом операнда
+	 */
+	public static String operandToString(Operand operand) {
+		switch (operand.getType()) {
+			case Roman:
+				return operand.getValue() == 0 ? "Zero" : doubleToRoman(operand.getValue());
+			case Arabic:
+				return doubleToString(operand.getValue());
+			case Binary:
+				return doubleToByte(operand.getValue());
+		}
+		return null;
+	}
+
+	/**
+	 * конвертация двоичных чисел в десятичные
+	 * @param - число в двоичном виде с перфиксом "0b"
+	 * @return - число в виде double
+	 */
+	public static double byteToDouble (String byteNum) {
+		return Long.parseLong(byteNum.replaceAll("0b",""),2);
+	}
+	/**
+	 * конвертация десятичных чисел в двоичные
+	 * @param - десятичное число
+	 * @return - двоичное число
+	 */
+	public static String doubleToByte (double num) {
+		return "0b" + Long.toBinaryString((long) num);
+	}
+	/**
 	 * преобразует double в String убирая дробную часть если она равна нулю
 	 * @param num - число
 	 * @return - введенное число в виде строки
 	 */
-	public static  String convertDoubleToString(double num) {
+	public static  String doubleToString(double num) {
 		StringBuilder str =  new StringBuilder();
 		str.append(String.valueOf((int) num))
 				.append(Double.valueOf(String.valueOf(num).replaceAll("^-?[0-9]+", "")) != 0 ?
@@ -77,8 +126,8 @@ public class NumConverter {
 	}
 
 	public static void main(String[] args) {
-		double i = -1;
-		logger.trace(convertDoubleToString(i));
+
+		logger.trace("{}", anyTypeNumbToDouble("0b110010010111"));
 	}
 }
 

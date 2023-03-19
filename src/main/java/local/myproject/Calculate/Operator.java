@@ -27,7 +27,6 @@ public class Operator extends Unit{
     Operator (Operators value) {
         this.value = value;
         this.type = setType(value);
-        this.unitType = UnitType.OPERATOR;
     }
 
     /**
@@ -78,11 +77,20 @@ public class Operator extends Unit{
     }
 
     /**
-     * геттер
+     * гетер
      * @return - возвращает значение оператора - плюс / минус / синус и т.д.
      */
     @Override
-    public Operators get() {
-        return value;
+    public String getValue() {
+        return value.getOperator();
+    }
+
+    /**
+     * гетер
+     * @return - возвращает приотет оператора
+     */
+    @Override
+    public int getPriority() {
+        return value.getPriority();
     }
 }
