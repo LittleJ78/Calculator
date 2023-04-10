@@ -13,7 +13,8 @@ import java.util.function.Function;
  * version 1.0
  */
 public enum PostfixUnaryOperators {
-    Factorial (x -> CustomMath.factorial(x));
+    Factorial (x -> CustomMath.factorial(x)),
+    Percent (x -> x / 100);
 
     private static final Logger logger = LoggerFactory.getLogger(PrefixUnaryOperators.class.getName());
 

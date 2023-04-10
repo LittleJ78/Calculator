@@ -4,13 +4,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * клас определяющий методы для валидации разных значений в текущем виде практически непригоден будет переписан
+ * клас определяющий методы для валидации разных значений
  * @author Evgenii Mironov
  * version 1.0
  */
 public class Validator {
 
 	private static final Logger logger = LoggerFactory.getLogger(Validator.class.getName());
+
+	/**
+	 * конструктор, т.к. все метода класса должны быть статическими, конструктор приватный
+	 */
 
 	private Validator() {
 	}

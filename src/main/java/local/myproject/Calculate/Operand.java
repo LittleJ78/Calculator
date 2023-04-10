@@ -86,8 +86,8 @@ public class Operand extends Unit{
 	 * @return числовое значение операнда
 	 */
 	@Override
-	public Double getValue() {
-		return this.value;
+	public String getValue() {
+		return Converter.doubleToString(value);
 	}
 
 	/**

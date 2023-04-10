@@ -14,7 +14,7 @@ public abstract class Unit {
      * гетер
      * @return - возвращает значение оператора или операнда
      */
-    public Object getValue() {
+    public String getValue() {
         return null;
     }
 

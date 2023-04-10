@@ -34,7 +34,6 @@ public class Expression {
 		logger.info("переопределили операторы в выражении {} ",this.getUnitExpression());
 		this.polishRecord = toPolishRecord(expression);
 		logger.info("Записали польскую запись " + getPolishRecord());
-		atomicExpression = new ArrayList<>();
 	}
 
 	/**
@@ -44,15 +43,15 @@ public class Expression {
 	 * @return - алгебраическое выражение в виде списка из отдельных переопределенных операторов и операнд
 	 */
 	private List<Unit> normaliseOperatorsTypeInUnitExpr (List<Unit> expression) throws Exception {
-		if (Operator.class.isInstance(expression.get(0)) && ((Operator) expression.get(0)).getValue().equals("-")) {
+		if (Operator.class.isInstance(expression.get(0)) && expression.get(0).getValue().equals("-")) {
 			logger.trace("обрабатываем {}",expression.get(0).getValue());
 			((Operator) expression.get(0)).setTypeOfOperator(TypeOfOperators.PrefixUnaryOperators);
 			logger.trace("изменили тип оператора с индексом 0 на {} ", TypeOfOperators.PrefixUnaryOperators);
 		}
 		for (int i = 1; i < expression.size(); i++) {
 			logger.trace("обрабатываем {}",expression.get(i).getValue());
-			if(Operator.class.isInstance(expression.get(i)) && ((Operator) expression.get(i)).getValue().equals("-")) {
-				if(Operator.class.isInstance(expression.get(i - 1)) && !((Operator) expression.get(i-1)).getValue().equals(")")) {
+			if(Operator.class.isInstance(expression.get(i)) && expression.get(i).getValue().equals("-")) {
+				if(Operator.class.isInstance(expression.get(i - 1)) && !expression.get(i-1).getValue().equals(")")) {
 					((Operator) expression.get(i)).setTypeOfOperator(TypeOfOperators.PrefixUnaryOperators);
 					logger.trace("изменили тип оператора с индексом {} на {} ",i , TypeOfOperators.PrefixUnaryOperators);
 				}
@@ -73,7 +72,7 @@ public class Expression {
 		List<String> stringExpression = Arrays.stream(str.split(" ")).toList();
 
 		Deque<Unit> buffer = new LinkedList<>();
-		logger.trace("ОБРАБОТКА НОРМАЛИЗОВАНОЙ ЗАПИСИ, [{}] элемента - {}",stringExpression.size(),stringExpression.toString());
+		logger.trace("ОБРАБОТКА НОРМАЛИЗОВАНОЙ ЗАПИСИ, [{}] элемента - {}",stringExpression.size(), stringExpression);
 		for(int i = 0; i < stringExpression.size(); i++) {
 			logger.trace("обрабатывается элемент {}",stringExpression.get(i));
 			if (Validator.validateNumber(stringExpression.get(i))) {
@@ -93,13 +92,14 @@ public class Expression {
 		Deque <Unit> result = new LinkedList<>();
 		while(!buffer.isEmpty()){  //преобразование "1(2-1)1" в "1 * (2 - 1) * 1"
 			if(Operator.class.isInstance(buffer.peekLast()) && !result.isEmpty())
-				if (((Operator) buffer.peekLast()).getValue().equals(")")
+				if (buffer.peekLast().getValue().equals(")")
 						&& (Operand.class.isInstance(result.peekFirst())
-						|| ((Operator) result.peekFirst()).getValue().equals("("))){
+						|| result.peekFirst().getValue().equals("(")
+						|| result.peekFirst().getType().equals(TypeOfOperators.PrefixUnaryOperators))){
 					result.addFirst(new Operator(Operators.Multiplication));
 				}
 			if(!result.isEmpty() && Operator.class.isInstance(result.peekFirst()))
-				if(((Operator) result.peekFirst()).getValue().equals("(")
+				if(result.peekFirst().getValue().equals("(")
 						&& Operand.class.isInstance(buffer.peekLast())) {
 					result.addFirst(new Operator(Operators.Multiplication));
 				}
@@ -183,6 +183,8 @@ public class Expression {
 	 */
 	public Operand calculate() throws ArithmeticException {
 		Deque <Unit> stack = new LinkedList<>();
+		Deque<Unit> polishRecord = new LinkedList<>(this.polishRecord);
+		atomicExpression = new ArrayList<>();
 
 		while (!polishRecord.isEmpty()) {
 			if (Operand.class.isInstance(polishRecord.peekFirst())) {
@@ -190,14 +192,14 @@ public class Expression {
 			}
 			if (Operator.class.isInstance(polishRecord.peekFirst())) {
 				Operand secondOperand = (Operand) stack.pollLast();
-				Operator operator = ((Operator) polishRecord.pollFirst());
+				Operator operator = (Operator) polishRecord.pollFirst();
 				logger.trace("выполняется операция \" {} \" ",operator.getValue());
 				if (operator.getType().equals(TypeOfOperators.BinaryOperators)) {
 					logger.trace("выполняется бинарная операция");
 					Operand firstOperand = (Operand) stack.pollLast();
 					stack.addLast(firstOperand.apply(operator, secondOperand));
 					atomicExpression.add(new ArrayList<>(List.of(firstOperand,operator,secondOperand)));
-					switch (((Operand) stack.peekLast()).getValue().toString()) {
+					switch (stack.peekLast().getValue()) {
 						case "Infinity":
 							logger.warn("{} {} {} = {} ",Converter.operandToString(firstOperand),operator.getValue(), Converter.operandToString(secondOperand), Converter.operandToString((Operand) stack.peekLast()));
 							throw new ArithmeticException("Infinity");
@@ -215,7 +217,7 @@ public class Expression {
 					} else if (operator.getType().equals(TypeOfOperators.PostfixUnaryOperators)) {
 						atomicExpression.add(new ArrayList<>(List.of(secondOperand, operator)));
 					}
-					switch (((Operand) stack.peekLast()).getValue().toString()) {
+					switch (stack.peekLast().getValue()) {
 						case "Infinity":
 							logger.error("{} {} = {} ", operator.getValue(), Converter.operandToString(secondOperand), Converter.operandToString((Operand) stack.peekLast()));
 							throw new ArithmeticException("Infinity");
@@ -227,33 +229,57 @@ public class Expression {
 				}
 			}
 		}
+		if (stack.size() != 1) {
+			logger.error("Величина стека = {}, стек {}",stack.size(), getExpression((List<Unit>) stack, null));
+			throw new ArithmeticException("Ошибка вычисления выражения");
+		}
 		return (Operand) stack.pollFirst();
 	}
-
+	/**
+	 * возвращает переданое выражение в виде строки
+	 * @param expression - выражение в виде листа обьектов с интерфейсом Unit
+	 * @param type - тип в котором нужно вывести операнд в переданном выражении, если null, то значение берется
+	 *             из операнда (определенное по умолчаню во время ввода операнада)
+	 * @return - алгебраическое выражение
+	 */
+	private  String getExpression(Collection<Unit> expression, TypeOfOperands type) {
+		String result = expression.stream()
+				.map(x -> Operand.class.isInstance(x) ?
+						  type != null ? Converter.operandToString((Operand) x, type) : Converter.operandToString((Operand) x)
+						  : x.getValue())
+				.collect(Collectors.joining(" "));
+		return result;
+	}
 	/**
 	 * возвращает алгебраическое выражение в виде строки
 	 * @return - алгебраическое выражение
 	 */
 	public String getUnitExpression() {
-		String result = unitExpression.stream()
-				.map(x -> Operator.class.isInstance(x) ?
-						((Operator) x).getValue() : Converter.doubleToString(((Operand) x).getValue()))
-				.collect(Collectors.joining(" "));
-
-		return result;
+		return getExpression(unitExpression, null);
+	}
+	/**
+	 * перегруженый метод, возвращает алгебраическое выражение в виде строки
+	 * @param type - тип в котором нужно вывести операнд в алгебраическом выражении
+	 * @return - алгебраическое выражение
+	 */
+	public String getUnitExpression(TypeOfOperands type) {
+		return getExpression(unitExpression, type);
 	}
 	/**
 	 * возвращает польскую запись в виде строки
 	 * @return - польская запись
 	 */
 	public String getPolishRecord() {
-		String result = polishRecord.stream()
-				.map(x -> Operator.class.isInstance(x) ?
-						((Operator) x).getValue() : Converter.doubleToString(((Operand) x).getValue()))
-				.collect(Collectors.joining(" "));
-		return result;
+		return getExpression(polishRecord, null);
 	}
-
+	/**
+	 * перегруженый метод, возвращает польскую запись в виде строки
+	 * @param type - тип в котором нужно вывести операнд в польской записи
+	 * @return - польская запись
+	 */
+	public String getPolishRecord(TypeOfOperands type) {
+		return getExpression(polishRecord, type);
+	}
 	/**
 	 * гетер
 	 * @return - возвращает количество атомарных выражений
@@ -263,8 +289,8 @@ public class Expression {
 	}
 
 	/**
-	 * гетер
-	 * @param - номер атомарной алгебраического выражения
+	 * возвращает атомарноге алгебраическоге выражение по указаному номеру операции
+	 * @param i - номер атомарного алгебраического выражения (номеру операции польской записи)
 	 * @return - запрошеное выражение в виде строки
 	 */
 	public String getAtomicExpression(int i) throws Exception{
@@ -276,17 +302,36 @@ public class Expression {
 		for (int j = 0; j < size; j++) {
 			expression.append( Operand.class.isInstance(atomicExpression.get(i).get(j)) ?
 					Converter.operandToString((Operand) atomicExpression.get(i).get(j)) :
-					((Operator) atomicExpression.get(i).get(j)).getValue()).append(" ");
+					atomicExpression.get(i).get(j).getValue()).append(" ");
+		}
+		return expression.toString().trim();
+	}
+	/**
+	 * перегруженый метод, возвращает атомарноге алгебраическоге выражение по указаному номеру операции
+	 * @param i - номер атомарного алгебраического выражения (номеру операции польской записи)
+	 * @param type - тип в котором нужно вывести операнд атомарного алгебраического выражения
+	 * @return - запрошеное выражение в виде строки
+	 */
+	public String getAtomicExpression(int i, TypeOfOperands type) throws Exception{
+		if( i < 0 || i >= atomicExpression.size()) {
+			throw new IndexOutOfBoundsException(String.format("количество операций %d, запрошено %d", atomicExpression.size(), i));
+		}
+		int size = atomicExpression.get(i).size();
+		StringBuilder expression = new StringBuilder();
+		for (int j = 0; j < size; j++) {
+			expression.append( Operand.class.isInstance(atomicExpression.get(i).get(j)) ?
+					Converter.operandToString((Operand) atomicExpression.get(i).get(j), type) :
+					atomicExpression.get(i).get(j).getValue()).append(" ");
 		}
 		return expression.toString().trim();
 	}
 
 	public static void main(String[] args) throws Exception {
-		Expression expression = new Expression("1-2(-4*7)+2^2");
+		Expression expression = new Expression("1-2(-4*7)sin90+2^2+3!");
 		expression.calculate();
 		for(int i = 0; i < expression.countOfAtomicExpressions(); i++) {
 			logger.info("{}) {}",i + 1 ,expression.getAtomicExpression(i));
 		}
-		logger.info("{}",Operand.class.isInstance(expression.unitExpression.get(0)));
+		logger.info("{}",expression.countOfAtomicExpressions());
 	}
 }

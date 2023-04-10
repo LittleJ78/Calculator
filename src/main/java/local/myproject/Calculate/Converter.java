@@ -87,11 +87,28 @@ public class Converter {
 	public static String operandToString(Operand operand) {
 		switch (operand.getType()) {
 			case Roman:
-				return operand.getValue() == 0 ? "Zero" : doubleToRoman(operand.getValue());
+				return Double.valueOf(operand.getValue()) == 0 ? "Zero" : doubleToRoman(Double.valueOf(operand.getValue()));
 			case Arabic:
-				return doubleToString(operand.getValue());
+				return operand.getValue();
 			case Binary:
-				return doubleToByte(operand.getValue());
+				return doubleToByte(Double.valueOf(operand.getValue()));
+		}
+		return null;
+	}
+	/**
+	 * перегруженый метод конвертации операнда в печатный вид в соответствии с заданным типом
+	 * @param operand - операнд
+	 * @param type - заданный тип
+	 * @return - значение ооперанда в виде строки в сответствии с заданным типом
+	 */
+	public static String operandToString(Operand operand, TypeOfOperands type) {
+		switch (type) {
+			case Roman:
+				return Double.valueOf(operand.getValue()) == 0 ? "Zero" : doubleToRoman(Double.valueOf(operand.getValue()));
+			case Arabic:
+				return operand.getValue();
+			case Binary:
+				return doubleToByte(Double.valueOf(operand.getValue()));
 		}
 		return null;
 	}
@@ -114,7 +131,7 @@ public class Converter {
 	}
 	/**
 	 * преобразует double в String убирая дробную часть если она равна нулю
-	 * @param num - число
+	// * @param num - число
 	 * @return - введенное число в виде строки
 	 */
 	public static  String doubleToString(double num) {

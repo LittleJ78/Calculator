@@ -27,6 +27,7 @@ public enum Operators {
 
 	//Postfix Unary Operators
 	Factorial (new OperatorVal("!", 2)),
+	Percent (new OperatorVal("%",2)),
 
 	// Brackets
 	LeftRoundBracket (new OperatorVal("(", 100)),
